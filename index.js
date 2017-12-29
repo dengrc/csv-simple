@@ -61,7 +61,7 @@ function parseArray(value) {
 	return value.split(",")
 }
 
-CSVsimple.saveCSV = (path, array) => {
+CSVsimple.write = (path, array) => {
 	return new Promise((resolve, reject) => {
 		var keys = Object.keys(array[0] || {});
 		var fWrite = fs.createWriteStream(path);
@@ -86,7 +86,7 @@ CSVsimple.saveCSV = (path, array) => {
 	})
 }
 
-CSVsimple.readCSV = path => {
+CSVsimple.read = path => {
 	return new Promise((resolve, reject) => {
 		var read = readline.createInterface({
 			input: fs.createReadStream(path)
@@ -115,7 +115,7 @@ CSVsimple.readCSV = path => {
 }
 
 /*
-CSVsimple.saveCSV("./file.csv", [{
+CSVsimple.write("./file.csv", [{
 		a: 1,
 		b: true,
 		c: '看到发"卡的看法地方'
@@ -137,7 +137,7 @@ CSVsimple.saveCSV("./file.csv", [{
 })
 
 
-CSVsimple.readCSV("./file.csv").then((e) => {
+CSVsimple.read("./file.csv").then((e) => {
 	console.log(e);
 }).catch(e => {
 	console.log("error", e);

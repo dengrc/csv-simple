@@ -1,5 +1,4 @@
-﻿//const fs = require('fs');
-const readline = require('readline');
+﻿const readline = require('readline');
 const fs = require('fs');
 const os = require('os');
 
@@ -63,23 +62,37 @@ function parseArray(value) {
 
 CSVsimple.write = (path, array) => {
 	return new Promise((resolve, reject) => {
-		var keys = Object.keys(array[0] || {});
-		var fWrite = fs.createWriteStream(path);
+		const keys = Object.keys(array[0] || {}),
+			fWrite = fs.createWriteStream(path),
+			lineBreaks = os.EOL,
+			CATCH_Lines = 1000,
+			MAX_Index = array.length - 1;
+
+		let cache = [],
+			index = 0;
+
 		fWrite.on('open', () => {
 			fWrite.write('\ufeff');
-			fWrite.write(keys.join(",") + os.EOL);
-			array.forEach(item => {
-				var row = [];
+			cache.push(keys.join(","));
+			array.forEach((item, i) => {
+				let row = [];
 				keys.forEach(key => {
 					row.push(stringify(item[key]))
-				})
-				fWrite.write(row.join(",") + os.EOL)
+				});
+				index++;
+				cache.push(row.join(","))
+				if(index === CATCH_Lines || i === MAX_Index) {
+					fWrite.write(cache.join(lineBreaks));
+					cache.length = index = 0;
+				}
 			});
 			fWrite.end();
 		});
+
 		fWrite.on('error', (err) => {
 			reject(err);
 		});
+
 		fWrite.on('finish', () => {
 			resolve(true);
 		});
@@ -88,57 +101,52 @@ CSVsimple.write = (path, array) => {
 
 CSVsimple.read = path => {
 	return new Promise((resolve, reject) => {
-		var read = readline.createInterface({
-			input: fs.createReadStream(path)
-		});
-
-		var fields = [],
+		const fRead = fs.createReadStream(path),
+			lineBreaks = os.EOL,
+			nLength = lineBreaks.length;
+			
+		let fields = [],
 			i = 0,
-			result=[];
-		read.on('line', (line) => {
+			_buffer = new Buffer(0),
+			result = [];
+
+		function read(buffer) {
+			do {
+				var n = buffer.indexOf(lineBreaks);
+				if(n > -1) {
+					line(buffer.slice(0, n).toString())
+					buffer = buffer.slice(n + nLength)
+				}
+			} while (n > -1)
+			return buffer;
+		}
+
+		function line(value) {
 			if(i++) {
 				let row = {},
-					array = parseArray(line);
+					array = parseArray(value);
 				fields.forEach(function(field, i) {
 					row[field] = array[i]
 				});
 				result.push(row)
 			} else {
-				fields = line.split(",")
+				fields = value.split(",")
 			}
-		});
+		}
 
-		read.on('close', () => {
+		fRead.on('data', (chunk) => {
+			fRead.pause();
+			_buffer = read(Buffer.concat([_buffer, chunk]));
+			fRead.resume();
+		});
+		
+		fRead.on('end', () => {
+			_buffer.length && line(_buffer.toString());
 			resolve(result);
+		});
+		
+		fRead.on('error', (err) => {
+			reject(e)
 		});
 	})
 }
-
-/*
-CSVsimple.write("./file.csv", [{
-		a: 1,
-		b: true,
-		c: '看到发"卡的看法地方'
-	},
-	{
-		a: 2,
-		b: false,
-		c: "ddddpoo破i哦ii！@#￥……&****（（"
-	},
-	{
-		a: 2,
-		b: false,
-		c: "ddddpoo破,i哦ii！@#￥……&****（（"
-	}
-]).then(() => {
-	console.log("success");
-}).catch(e => {
-	console.log("error", e);
-})
-
-
-CSVsimple.read("./file.csv").then((e) => {
-	console.log(e);
-}).catch(e => {
-	console.log("error", e);
-})*/

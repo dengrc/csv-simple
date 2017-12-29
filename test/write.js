@@ -1,5 +1,4 @@
 const csv = require('../index.js');
-
 csv.write("./file.csv",Array.from(new Array(1000),function(a,i){
 	return i%2?{
         a: 1,

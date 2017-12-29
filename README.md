@@ -3,7 +3,7 @@
 * read(path)
 
 ```javascript
-const csv = require('os');
+const csv = require('csv-simple');
 csv.write("./file.csv", [{
         a: 1,
 		b: true,
@@ -22,7 +22,7 @@ csv.write("./file.csv", [{
 ```
 
 ```javascript
-const csv = require('os');
+const csv = require('csv-simple');
 csv.read("./file.csv").then((result) => {
 	console.log(result);
 }).catch(e => {
